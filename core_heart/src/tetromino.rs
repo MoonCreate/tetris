@@ -18,6 +18,15 @@ impl TetrominoDirection {
             Self::Left => Self::Up
         }
     }
+
+    pub fn rotate_counterclockwise(&mut self) {
+        *self = match self {
+            Self::Up => Self::Left,
+            Self::Right => Self::Up,
+            Self::Down => Self::Right,
+            Self::Left => Self::Down
+        }
+    }
 }
 
 #[wasm_bindgen]
