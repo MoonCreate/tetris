@@ -1,5 +1,6 @@
 <script lang="ts">
-	import TetrisContainer from "$components/TetrisContainer.svelte";
+	import MessageContainer from "$components/MessageContainer.svelte";
+    import TetrisContainer from "$components/TetrisContainer.svelte";
 	import { loadBGM } from "$lib/util";
     import initWasm from "core_heart";
     let wasmInited = $state(false);
@@ -30,7 +31,12 @@
 
 {#if wasmInited}
     <TetrisContainer />
-    <TetrisContainer />
+    <div style="position: fixed; top: 2rem; right: 1rem; transform: scale(0.5);">
+        <TetrisContainer />
+    </div>
+    <div style="position: fixed; right: 10rem; transform: scale(0.3); bottom: 1rem;">
+        <TetrisContainer />
+    </div>
 {:else}
     <div>Loading Wasm please wait....</div>
 {/if}
@@ -49,5 +55,6 @@
         color: white;
         padding: 1rem;
         animation: bounce 1s ease infinite;
+        z-index: 99999;
     }
 </style>

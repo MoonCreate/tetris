@@ -12,7 +12,7 @@
         }
     }
 
-    console.log($page.error?.message);
+    console.log($page.error?.message, $page.status);
 </script>
 
 <div class="error">

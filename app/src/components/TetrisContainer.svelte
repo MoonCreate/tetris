@@ -122,7 +122,6 @@
 {/if}
 </div>
 
-
 <style>
     .board {
         display: grid;
