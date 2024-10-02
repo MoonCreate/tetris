@@ -2,7 +2,7 @@ use crate::{game::TetrisGame, tetromino::{Tetromino, TetrominoDirection}};
 
 #[test]
 fn must() {
-    let tetromino = Tetromino::I;
+    let tetromino = Tetromino::O;
     tetromino.print(TetrominoDirection::Up);
     println!("");
     tetromino.print(TetrominoDirection::Right);

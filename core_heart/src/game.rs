@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+use getrandom::getrandom;
 
 use crate::tetromino::{Tetromino, TetrominoDirection};
 
@@ -17,10 +18,25 @@ impl TetrisGame {
     pub fn new() -> Self {
         Self {
             board: [[0u8; 10]; 20],
-            current_tetromino: Tetromino::T,
+            current_tetromino: Self::get_random_tetromino(),
             current_tetromino_direction: TetrominoDirection::Up,
-            current_x: 0,
+            current_x: 4,
             current_y: 0,
+        }
+    }
+
+    fn get_random_tetromino() -> Tetromino {
+        let mut buf = [0u8; 1];
+        getrandom(&mut buf).unwrap();
+        match buf[0] % 7 {
+            0 => Tetromino::I,
+            1 => Tetromino::J,
+            2 => Tetromino::L,
+            3 => Tetromino::O,
+            4 => Tetromino::S,
+            5 => Tetromino::T,
+            6 => Tetromino::Z,
+            _ => Tetromino::I,
         }
     }
 
@@ -31,13 +47,13 @@ impl TetrisGame {
             let place_y = self.current_y + y;
             for x in 0..4 {
                 let place_x = self.current_x + x;
-                if tetromino[y as usize][x as usize] == 1 {
+                if tetromino[y as usize][x as usize] != 0 {
                     // if piece out of range
                     if place_x < 0 || place_y < 0 || place_x >= 10 || place_y >= 20 {
                         return true;
                     }
                     // if occupied
-                    if board[place_y as usize][place_x as usize] == 1 {
+                    if board[place_y as usize][place_x as usize] != 0 {
                         return true;
                     }
                 }
@@ -65,7 +81,7 @@ impl TetrisGame {
                     continue
                 };
 
-                board[ghost_y][ghost_x] = 2;
+                board[ghost_y][ghost_x] = 8;
                 board[place_y][place_x] = tetromino[i][j];
             }
         }
@@ -138,7 +154,7 @@ impl TetrisGame {
         true
     }
 
-    pub fn place(&mut self) {
+    pub fn place(&mut self) -> bool {
         let tetromino = self.current_tetromino.get_array(self.current_tetromino_direction);
         for i in 0usize..4 {
             let place_y = self.current_y as usize + i;
@@ -154,10 +170,14 @@ impl TetrisGame {
             }
         }
 
-        self.current_tetromino = Tetromino::T;
+        let result = self.eliminate_lines();
+
+        self.current_tetromino = Self::get_random_tetromino();
         self.current_tetromino_direction = TetrominoDirection::Up;
-        self.current_x = 0;
+        self.current_x = 4;
         self.current_y = 0;
+
+        result
     }
 
     fn get_ghost_position(&mut self) -> (i8, i8) {
@@ -173,5 +193,21 @@ impl TetrisGame {
         self.current_y = prior_y;
 
         (result_x, result_y)
+    }
+
+    pub fn eliminate_lines(&mut self) -> bool {
+        let mut eliminate = false;
+        let mut new_lines = Vec::<[u8; 10]>::new();
+        for i in 0..20 {
+            let line = self.board[i];
+            if line.iter().all(|&x| x != 0) {
+                new_lines.insert(0, [0u8; 10]);
+                eliminate = true;
+            } else {
+                new_lines.push(line);
+            }
+        }
+        self.board = new_lines.try_into().unwrap();
+        eliminate
     }
 }

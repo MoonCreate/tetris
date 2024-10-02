@@ -1,4 +1,5 @@
 <script>
+    import "../app.css"
     import initWasm from "core_heart";
     const { children } = $props();
 </script>

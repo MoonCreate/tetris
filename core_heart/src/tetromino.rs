@@ -75,10 +75,10 @@ impl Tetromino {
                 TetrominoDirection::Left => 0x8c40,
             }
             Self::T => match direction {
-                TetrominoDirection::Up => 0x0e40,
-                TetrominoDirection::Right => 0x4c40,
-                TetrominoDirection::Down => 0x4e00,
-                TetrominoDirection::Left => 0x4640,
+                TetrominoDirection::Down => 0x0e40,
+                TetrominoDirection::Left => 0x4c40,
+                TetrominoDirection::Up => 0x4e00,
+                TetrominoDirection::Right => 0x4640,
                 
             }
             Self::Z => match direction {
@@ -95,23 +95,31 @@ impl Tetromino {
         let mut array = [[0u8; 4]; 4];
         for i in 0..4 {
             for j in 0..4 {
-                array[3 - i][3 - j] =  (bytes >> (i * 4 + j) & 1) as u8;
+                array[3 - i][3 - j] = (bytes >> (i * 4 + j) & 1) as u8 * self.get_id();
             }
         }
         array
     }
 
+    pub fn get_id(&self) -> u8 {
+        match self {
+            Self::I => 1,
+            Self::J => 2,
+            Self::L => 3,
+            Self::O => 4,
+            Self::S => 5,
+            Self::T => 6,
+            Self::Z => 7
+        }
+    }
+
     pub fn print(&self, direction: TetrominoDirection) {
         let array = self.get_array(direction);
-        array
-        .iter()
-        .for_each(|x| {
-            x
-            .iter()
-            .for_each(|y| {
-                print!("{y}");
-            });
-            println!("");
-        });
+        for i in 0..4 {
+            for j in 0..4 {
+                print!("{}", array[i][j]);
+            }
+            println!();
+        }
     }
 }
