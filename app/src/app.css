@@ -1,32 +1,14 @@
-:root {
-    --catppuccin-machia-bg-hsl: 210 5% 12%;
-    --catppuccin-machia-fg-hsl: 210 5% 95%;
-    --catppuccin-machia-accent-hsl: 120 95% 55%;
-    --catppuccin-machia-red-hsl: 0 100% 50%;
-    --catppuccin-machia-orange-hsl: 30 100% 50%;
-    --catppuccin-machia-yellow-hsl: 60 100% 50%;
-    --catppuccin-machia-green-hsl: 120 100% 50%;
-    --catppuccin-machia-teal-hsl: 180 100% 50%;
-    --catppuccin-machia-blue-hsl: 210 100% 50%;
-    --catppuccin-machia-indigo-hsl: 240 100% 50%;
-    --catppuccin-machia-purple-hsl: 270 100% 50%;
-    --catppuccin-machia-pink-hsl: 300 100% 50%;
-    --catppuccin-machia-cyan-hsl: 210 100% 50%;
-    --catppuccin-machia-white-hsl: 0 0% 100%;
-    --catppuccin-machia-black-hsl: 0 0% 0%;
-}
-
 body {
-    background-color: hsl(var(--catppuccin-machia-bg-hsl));
-    color: hsl(var(--catppuccin-machia-fg-hsl));
-}
-
-h1 {
-    color: hsl(var(--catppuccin-machia-accent-hsl));
-}
-
-.button {
-    background-color: hsl(var(--catppuccin-machia-accent-hsl));
-    color: hsl(var(--catppuccin-machia-bg-hsl));
-    opacity: var(--catppuccin-opacity, 1);
+    margin: 0;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+    background-color: hsl(236deg, 23%, 12%);
+    gap: 0.5rem;
 }

@@ -1,16 +1,15 @@
 <script lang="ts">
-    import initWasm, { TetrisGame } from "core_heart";
-
-    type TetrisContainerProps = {
-        readonly loadWasm?: boolean;
-    };
-    const { loadWasm = false }: TetrisContainerProps = $props();
-
+	import { loadSFX } from "$lib/util";
+    import { TetrisGame } from "core_heart";
     /* svelte-ignore non_reactive_update */
     let game = new TetrisGame();
 
     let rawprint = $state(game.print());
     let boardprint = $derived(JSON.parse(rawprint).flat() as number[]);
+    let isOver = $state(false);
+    let isPaused = $state(false);
+
+    const sfx = loadSFX();
 
     // effects
     const effects = $state({
@@ -38,7 +37,10 @@
 
     const place = () => {
         const eliminated = game.place();
-        if (eliminated) triggerEffects("shake");
+        if (eliminated) {
+            triggerEffects("shake");
+            sfx.line.play();
+        } 
     }
 
 
@@ -46,9 +48,12 @@
 
     const createTimeout = () => gameRun = setTimeout(() => {
         const success = game.move_down();
-        if (!success) place();
+        if (!success) {
+            place();
+            isOver = game.is_over(); 
+        }
         rawprint = game.print();
-        createTimeout();
+        if (!isOver && !isPaused) createTimeout();
     }, 500);
 
     const listenKeyboard = (ev: KeyboardEvent) => {
@@ -60,14 +65,17 @@
         let success = false;
 
         switch(true) {
-            case keys("ArrowLeft", "h"): success = game.move_left(); triggerEffects("jitterLeft"); break;
-            case keys("ArrowRight", "l"): success = game.move_right(); triggerEffects("jitterRight"); break;
-            case keys("ArrowDown", "j"): success = game.move_down(); break;
-            case keys("ArrowUp", "k"): success = game.rotate_clockwise(); break;
-            case keys("z"): success = game.rotate_counterclockwise(); break;
-            case keys("Escape"): game.free(); game = new TetrisGame(); success = true; rawprint = game.print(); break;
-            case keys(" "): success = true; while(game.move_down()) {}; place(); break;
+            case keys("ArrowLeft", "h") && !isOver && !isPaused: success = game.move_left(); triggerEffects("jitterLeft"); sfx.move.play(); break;
+            case keys("ArrowRight", "l") && !isOver && !isPaused: success = game.move_right(); triggerEffects("jitterRight"); sfx.move.play(); break;
+            case keys("ArrowDown", "j") && !isOver && !isPaused: success = game.move_down(); sfx.move.play(); break;
+            case keys("ArrowUp", "k") && !isOver && !isPaused: success = game.rotate_clockwise(); sfx.move.play(); break;
+            case keys("z") && !isOver && !isPaused: success = game.rotate_counterclockwise(); sfx.move.play(); break;
+            case keys("Escape"): game.free(); game = new TetrisGame(); success = true; rawprint = game.print(); isOver = false; break;
+            case keys(" ") && !isOver && !isPaused: success = true; while(game.move_down()) {}; place(); isOver = game.is_over(); break;
+            case keys("p") && !isOver: isPaused = !isPaused; break;
         }
+
+        if (isPaused) return;
 
         if (success) {
             rawprint = game.print();
@@ -87,59 +95,41 @@
     });
 </script>
 
-{#snippet board()}
+<div
+    class="board"
+    class:shake={effects.shake}
+    class:jitter-right={effects.jitterRight}
+    class:jitter-left={effects.jitterLeft}>
+{#each boardprint as item}
     <div
-        class="board"
-        class:shake={effects.shake}
-        class:jitter-right={effects.jitterRight}
-        class:jitter-left={effects.jitterLeft}>
-    {#each boardprint as item}
-        <div
-            class="item"
-            class:active={item > 0 && item < 8}
-            style="
-                --tetromino-color: {getTetrominoColor(item === 8 ? game.current_tetromino + 1: item)};
-                --tetromino-opacity: {item === 8 ? 0.5 : 1}
-            "
-            ></div>
-    {/each}
+        class="item"
+        class:active={item > 0 && item < 8}
+        style="
+            --tetromino-color: {getTetrominoColor(item === 8 ? (game.piece ?? 0) + 1: item)};
+            --tetromino-opacity: {item === 8 ? 0.2 : 1}
+        "
+        ></div>
+{/each}
+{#if isOver}
+    <div class="announce" style="--announce-color: hsl(351deg, 74%, 73%);">
+        <h1>Game Over</h1>
     </div>
-{/snippet}
-
-{#snippet init()}
-    <div>Loading wasm....</div>
-{/snippet}
-
-{#if loadWasm}
-    {#await initWasm()}
-        {@render init()}
-    {:then} 
-        {@render board()}
-    {/await}
-{:else}
-    {@render board()}
 {/if}
+{#if isPaused}
+    <div class="announce" style="--announce-color: hsl(40deg, 70%, 78%);">
+        <h1>Paused</h1>
+    </div>
+{/if}
+</div>
+
 
 <style>
-    :global(body) {
-        margin: 0;
-        padding: 0.5rem;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        width: 100vw;
-        height: 100vh;
-        max-width: 100%;
-        max-height: 100%;
-        box-sizing: border-box;
-        background-color: hsl(236deg, 23%, 12%);
-        gap: 0.5rem;
-    }
     .board {
         display: grid;
         grid-template-columns: repeat(10, min-content);
         grid-template-rows: repeat(20, min-content);
         gap: 0.5rem;
+        position: relative;
 
         .item {
             --tetromino-opacity: 100%;
@@ -150,10 +140,33 @@
             width: 1.5rem;
             height: 1.5rem;
             box-sizing: border-box;
+            border-radius: 10%;
         }
 
         .item.active {
             border-color: transparent;
+            color: hsla(var(--tetromino-color), 50%);
+            box-shadow: 0 0 0.5rem;
+        }
+
+        .announce {
+            position: absolute;
+            inset: 0;
+            width: fit-content;
+            height: fit-content;
+            margin: auto;
+            background-color: hsla(236deg, 23%, 12%, 85%);
+            border-radius: .5rem;
+            padding: 1rem;
+            border: 1px hsl(230deg, 19%, 26%) dashed;
+            backdrop-filter: blur(1rem);
+            * {
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+                font-family: monospace;
+                color: var(--announce-color);
+            }
         }
     }
 

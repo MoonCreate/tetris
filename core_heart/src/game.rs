@@ -6,10 +6,11 @@ use crate::tetromino::{Tetromino, TetrominoDirection};
 #[wasm_bindgen]
 pub struct TetrisGame {
     board: [[u8; 10]; 20],
-    pub current_tetromino: Tetromino,
     pub current_tetromino_direction: TetrominoDirection,
     pub current_x: i8,
     pub current_y: i8,
+    pieces: Vec<Tetromino>,
+    pub piece: Option<Tetromino>
 }
 
 #[wasm_bindgen]
@@ -18,30 +19,62 @@ impl TetrisGame {
     pub fn new() -> Self {
         Self {
             board: [[0u8; 10]; 20],
-            current_tetromino: Self::get_random_tetromino(),
             current_tetromino_direction: TetrominoDirection::Up,
             current_x: 4,
             current_y: 0,
+            pieces: vec![],
+            piece: None,
         }
     }
 
-    fn get_random_tetromino() -> Tetromino {
+    fn current_tetromino(&mut self) -> Tetromino {
+        if self.piece.is_none() {
+            self.change_pieces();
+        }
+        self.piece.unwrap()
+    }
+
+    fn change_pieces(&mut self) {
+        if self.pieces.is_empty() {
+            self.pieces.append(&mut vec![
+                Tetromino::I,
+                Tetromino::I,
+                Tetromino::I,
+                Tetromino::I,
+                Tetromino::J,
+                Tetromino::J,
+                Tetromino::J,
+                Tetromino::J,
+                Tetromino::L,
+                Tetromino::L,
+                Tetromino::L,
+                Tetromino::L,
+                Tetromino::O,
+                Tetromino::O,
+                Tetromino::O,
+                Tetromino::O,
+                Tetromino::S,
+                Tetromino::S,
+                Tetromino::S,
+                Tetromino::S,
+                Tetromino::T,
+                Tetromino::T,
+                Tetromino::T,
+                Tetromino::T,
+                Tetromino::Z,
+                Tetromino::Z,
+                Tetromino::Z,
+                Tetromino::Z,
+            ]);
+        }
         let mut buf = [0u8; 1];
         getrandom(&mut buf).unwrap();
-        match buf[0] % 7 {
-            0 => Tetromino::I,
-            1 => Tetromino::J,
-            2 => Tetromino::L,
-            3 => Tetromino::O,
-            4 => Tetromino::S,
-            5 => Tetromino::T,
-            6 => Tetromino::Z,
-            _ => Tetromino::I,
-        }
+        let index = buf[0] as usize % self.pieces.len();
+        self.piece = Some(self.pieces.remove(index));
     }
 
-    fn is_occupied(&self) -> bool {
-        let tetromino = self.current_tetromino.get_array(self.current_tetromino_direction);
+    fn is_occupied(&mut self) -> bool {
+        let tetromino = self.current_tetromino().get_array(self.current_tetromino_direction);
         let board = self.board;
         for y in 0..4 {
             let place_y = self.current_y + y;
@@ -63,7 +96,7 @@ impl TetrisGame {
     }
 
     pub fn print(&mut self) -> String {
-        let tetromino = self.current_tetromino.get_array(self.current_tetromino_direction);
+        let tetromino = self.current_tetromino().get_array(self.current_tetromino_direction);
         let mut board = self.board;
         let ghost = self.get_ghost_position();
 
@@ -124,10 +157,6 @@ impl TetrisGame {
         true
     }
 
-    pub fn change(&mut self, tetromino: Tetromino) {
-        self.current_tetromino = tetromino;
-    }
-
     pub fn rotate_clockwise(&mut self) -> bool {
         self.current_tetromino_direction.rotate_clockwise();
         if self.is_occupied() {
@@ -155,7 +184,7 @@ impl TetrisGame {
     }
 
     pub fn place(&mut self) -> bool {
-        let tetromino = self.current_tetromino.get_array(self.current_tetromino_direction);
+        let tetromino = self.current_tetromino().get_array(self.current_tetromino_direction);
         for i in 0usize..4 {
             let place_y = self.current_y as usize + i;
             if place_y > 19 {
@@ -172,7 +201,7 @@ impl TetrisGame {
 
         let result = self.eliminate_lines();
 
-        self.current_tetromino = Self::get_random_tetromino();
+        self.piece = None;
         self.current_tetromino_direction = TetrominoDirection::Up;
         self.current_x = 4;
         self.current_y = 0;
@@ -209,5 +238,18 @@ impl TetrisGame {
         }
         self.board = new_lines.try_into().unwrap();
         eliminate
+    }
+
+    pub fn is_over(&mut self) -> bool {
+        let prior_y = self.current_y;
+        let prior_x = self.current_x;
+
+        if self.move_down() {
+            self.current_y = prior_y;
+            self.current_x = prior_x;
+            false
+        } else {
+            prior_y == 0
+        }
     }
 }
